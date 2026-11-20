@@ -2,7 +2,9 @@
 backend/vendor/
 backend/.env
 backend/.env.backup
+backend/.env.production
 backend/.phpunit.result.cache
+backend/.phpunit.cache/
 backend/storage/*.key
 backend/bootstrap/cache/*.php
 !backend/bootstrap/cache/.gitkeep
@@ -12,8 +14,14 @@ frontend/node_modules/
 frontend/dist/
 frontend/.env
 frontend/.env.local
+frontend/.env.*.local
 
-# OS & Logs
+# Test Cache, Logs & Sensitive Keys
+.phpunit.result.cache
+*.log
+*.key
+*.pem
+
+# OS
 .DS_Store
 Thumbs.db
-*.log
