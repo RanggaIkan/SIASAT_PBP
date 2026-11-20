@@ -14,6 +14,7 @@ Aplikasi manajemen akademik perguruan tinggi fullstack berbasis web yang mengimp
 TAS_PBP/
 ├── backend/              # REST API Laravel 12, migrasi, seeder, & PHPUnit acceptance tests
 ├── frontend/             # SPA React 18 + Vite + Tailwind CSS
+├── scripts/              # Skrip uji concurrency paralel (AT-05/NFR-05) & backup/restore MySQL (NFR-14)
 ├── docs/
 │   └── ui-spec.md        # Spesifikasi desain antarmuka Soft Daylight & Airy White
 ├── SRS_SIASAT_v2.0.md    # Dokumen Software Requirements Specification v2.0
@@ -114,3 +115,50 @@ npm run build
 ```
 
 Hasil build produksi akan tersimpan di `frontend/dist/`.
+
+## Pengujian Concurrency Paralel (AT-05 & NFR-05)
+
+Skrip `scripts/test-concurrency.mjs` (Node.js ESM tanpa dependensi eksternal) menguji transaksi paralel secara nyata:
+- **AT-05:** `student3` dan `student4` memperebutkan 1 kursi terakhir kelas `IF203 Jaringan Komputer A` (`29/30`) secara simultan — tepat 1 berhasil (`200 confirmed`), 1 ditolak (`409 CLASS_QUOTA_FULL`), dan `enrolled_count` akhir tetap `30/30`.
+- **NFR-02 & NFR-05:** 50 request presensi paralel oleh `student1` pada Sesi #1 `IF201 Basis Data A` — seluruh request sukses (`1x 201` + `49x 200`, nol error), mengembalikan `id` dan `recorded_at` identik, serta tercatat tepat 1 baris pada rekap dosen.
+
+Jalankan 2 instance Laravel secara paralel di dua terminal terpisah (karena PHP built-in server bersifat single-threaded):
+
+```powershell
+# Terminal 1
+cd backend
+php artisan serve --host=127.0.0.1 --port=8000
+
+# Terminal 2
+cd backend
+php artisan serve --host=127.0.0.1 --port=8001
+```
+
+Lalu jalankan skrip uji dari root proyek (flag `--reset` menjalankan `php artisan migrate:fresh --seed` sebelum tes):
+
+```powershell
+node scripts/test-concurrency.mjs --reset --urls=http://127.0.0.1:8000,http://127.0.0.1:8001
+```
+
+## Backup & Restore Database (NFR-14)
+
+Skrip PowerShell di folder `scripts/` otomatis mendeteksi `mysqldump.exe` dan `mysql.exe` dari instalasi WampServer (`C:\wamp64\bin\mysql\mysql*\bin\`) serta membaca kredensial database dari `backend\.env`.
+
+- **Backup manual** (menyimpan ke `backups\siasat_db_YYYYMMDD_HHmmss.sql` dan otomatis menghapus file backup lebih dari **7 hari**):
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\backup.ps1
+```
+
+- **Restore database** (tanpa `-BackupFile` akan memilih file `.sql` terbaru di `backups\`; tambahkan `-Force` untuk melewati konfirmasi interaktif):
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\restore.ps1
+powershell -ExecutionPolicy Bypass -File .\scripts\restore.ps1 -BackupFile .\backups\siasat_db_20261120_163000.sql -Force
+```
+
+- **Jadwal Backup Harian Otomatis (Windows Task Scheduler, setiap hari pukul 02:00)**:
+
+```powershell
+schtasks /Create /SC DAILY /TN "SIASAT_Daily_MySQL_Backup" /TR "powershell.exe -NoProfile -ExecutionPolicy Bypass -File \"D:\01_Kuliah\TAS_PBP\scripts\backup.ps1\"" /ST 02:00 /F
+```
