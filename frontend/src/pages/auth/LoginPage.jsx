@@ -50,13 +50,15 @@ export function LoginPage() {
   const [error, setError] = useState(null)
   const [lockSeconds, setLockSeconds] = useState(0)
 
+  const isLocked = lockSeconds > 0
+
   useEffect(() => {
-    if (lockSeconds <= 0) return undefined
+    if (!isLocked) return undefined
     const timer = window.setInterval(() => {
       setLockSeconds((prev) => (prev <= 1 ? 0 : prev - 1))
     }, 1000)
     return () => window.clearInterval(timer)
-  }, [lockSeconds])
+  }, [isLocked])
 
   if (user) {
     return <Navigate to={getRoleHomePath(user.role)} replace />

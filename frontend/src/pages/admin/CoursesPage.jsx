@@ -34,8 +34,8 @@ export function CoursesPage() {
   const [saving, setSaving] = useState(false)
   const [formError, setFormError] = useState(null)
 
-  const fetchCourses = useCallback(async () => {
-    setLoading(true)
+  const fetchCourses = useCallback(async (silent = false) => {
+    if (!silent) setLoading(true)
     setPageError(null)
     try {
       const res = await api.get('/admin/courses')
@@ -43,7 +43,7 @@ export function CoursesPage() {
     } catch (err) {
       setPageError(err)
     } finally {
-      setLoading(false)
+      if (!silent) setLoading(false)
     }
   }, [])
 
@@ -102,7 +102,7 @@ export function CoursesPage() {
         showToast('Mata kuliah baru berhasil ditambahkan.')
       }
       setModalOpen(false)
-      await fetchCourses()
+      await fetchCourses(true)
     } catch (err) {
       setFormError(err)
     } finally {

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import {
   ArrowLeft,
@@ -86,7 +86,7 @@ export function LecturerClassDetailPage() {
   const [participantsError, setParticipantsError] = useState(null);
 
   const [sessions, setSessions] = useState([]);
-  const [loadingSessions, setLoadingSessions] = useState(false);
+  const [loadingSessions, setLoadingSessions] = useState(true);
   const [sessionsError, setSessionsError] = useState(null);
   const [sessionActionError, setSessionActionError] = useState(null);
   const [sessionSuccess, setSessionSuccess] = useState('');
@@ -121,7 +121,7 @@ export function LecturerClassDetailPage() {
   // Grades tab state
   const [gradeRows, setGradeRows] = useState([]);
   const [allPublished, setAllPublished] = useState(false);
-  const [loadingGrades, setLoadingGrades] = useState(false);
+  const [loadingGrades, setLoadingGrades] = useState(true);
   const [gradesError, setGradesError] = useState(null);
   const [gradeActionError, setGradeActionError] = useState(null);
   const [gradeSuccess, setGradeSuccess] = useState('');
@@ -130,6 +130,13 @@ export function LecturerClassDetailPage() {
   const [publishModalOpen, setPublishModalOpen] = useState(false);
   const [publishingGrades, setPublishingGrades] = useState(false);
   const [ungradedIds, setUngradedIds] = useState(new Set());
+
+  const headerReqRef = useRef(0);
+  const participantsReqRef = useRef(0);
+  const sessionsReqRef = useRef(0);
+  const gradesReqRef = useRef(0);
+  const recapReqRef = useRef(0);
+  const gradeRowsRef = useRef([]);
 
   // Revision modal
   const [revisionTarget, setRevisionTarget] = useState(null);
@@ -149,79 +156,138 @@ export function LecturerClassDetailPage() {
   }, []);
 
   const fetchClassHeader = useCallback(async () => {
+    const reqId = ++headerReqRef.current;
     setLoadingClassInfo(true);
     try {
       const res = await api.get('/lecturer/classes');
+      if (reqId !== headerReqRef.current) return;
       const list = extractList(extractPayload(res), 'classes');
       const matched = list.find((c) => String(c.id) === String(classId));
       if (matched) mergeClassInfo(matched);
     } catch {
       // Header fallback handled by tab responses
     } finally {
-      setLoadingClassInfo(false);
+      if (reqId === headerReqRef.current) {
+        setLoadingClassInfo(false);
+      }
     }
   }, [classId, mergeClassInfo]);
 
   const fetchParticipants = useCallback(async () => {
+    const reqId = ++participantsReqRef.current;
     setLoadingParticipants(true);
     setParticipantsError(null);
     try {
       const res = await api.get(`/lecturer/classes/${classId}/participants`);
+      if (reqId !== participantsReqRef.current) return;
       const payload = extractPayload(res);
       if (payload?.course_class) mergeClassInfo(payload.course_class);
       setParticipants(extractList(payload, 'participants'));
     } catch (err) {
+      if (reqId !== participantsReqRef.current) return;
       setParticipantsError(err);
     } finally {
-      setLoadingParticipants(false);
+      if (reqId === participantsReqRef.current) {
+        setLoadingParticipants(false);
+      }
     }
   }, [classId, mergeClassInfo]);
 
-  const fetchSessions = useCallback(async () => {
-    setLoadingSessions(true);
+  const fetchSessions = useCallback(async ({ silent = false } = {}) => {
+    const reqId = ++sessionsReqRef.current;
+    if (!silent) {
+      setLoadingSessions(true);
+    }
     setSessionsError(null);
     try {
       const res = await api.get(`/lecturer/classes/${classId}/sessions`);
+      if (reqId !== sessionsReqRef.current) return;
       const payload = extractPayload(res);
       if (payload?.course_class) mergeClassInfo(payload.course_class);
       setSessions(extractList(payload, 'sessions'));
     } catch (err) {
+      if (reqId !== sessionsReqRef.current) return;
       setSessionsError(err);
     } finally {
-      setLoadingSessions(false);
+      if (reqId === sessionsReqRef.current && !silent) {
+        setLoadingSessions(false);
+      }
     }
   }, [classId, mergeClassInfo]);
 
-  const fetchGrades = useCallback(async () => {
-    setLoadingGrades(true);
+  const fetchGrades = useCallback(async ({
+    silent = false,
+    preserveDirty = false,
+    resetIds = null,
+  } = {}) => {
+    const reqId = ++gradesReqRef.current;
+    if (!silent) {
+      setLoadingGrades(true);
+    }
     setGradesError(null);
     try {
       const res = await api.get(`/lecturer/classes/${classId}/grades`);
+      if (reqId !== gradesReqRef.current) return;
       const payload = extractPayload(res);
       if (payload?.course_class) mergeClassInfo(payload.course_class);
       const list = extractList(payload, 'participants');
+
+      const prevServerScores = new Map();
+      gradeRowsRef.current.forEach((row) => {
+        const sc = row.grade?.score;
+        prevServerScores.set(
+          row.student_id,
+          sc !== null && sc !== undefined ? String(sc) : ''
+        );
+      });
+
+      gradeRowsRef.current = list;
       setGradeRows(list);
       setAllPublished(Boolean(payload?.all_published));
-      const nextDrafts = {};
-      list.forEach((row) => {
-        const sc = row.grade?.score;
-        nextDrafts[row.student_id] =
-          sc !== null && sc !== undefined ? String(sc) : '';
+      setDraftScores((prevDrafts) => {
+        const nextDrafts = {};
+        list.forEach((row) => {
+          const sc = row.grade?.score;
+          const serverVal = sc !== null && sc !== undefined ? String(sc) : '';
+          if (
+            preserveDirty &&
+            !row.grade?.is_published &&
+            !(resetIds && resetIds.has(row.student_id))
+          ) {
+            const prevDraft = prevDrafts[row.student_id];
+            const prevServer = prevServerScores.get(row.student_id) ?? '';
+            if (prevDraft !== undefined && prevDraft !== prevServer) {
+              nextDrafts[row.student_id] = prevDraft;
+              return;
+            }
+          }
+          nextDrafts[row.student_id] = serverVal;
+        });
+        return nextDrafts;
       });
-      setDraftScores(nextDrafts);
       setUngradedIds(new Set());
     } catch (err) {
+      if (reqId !== gradesReqRef.current) return;
       setGradesError(err);
     } finally {
-      setLoadingGrades(false);
+      if (reqId === gradesReqRef.current && !silent) {
+        setLoadingGrades(false);
+      }
     }
-  }, [classId]);
+  }, [classId, mergeClassInfo]);
 
   useEffect(() => {
     fetchClassHeader();
     fetchParticipants();
     fetchSessions();
     fetchGrades();
+    return () => {
+      headerReqRef.current += 1;
+      participantsReqRef.current += 1;
+      sessionsReqRef.current += 1;
+      gradesReqRef.current += 1;
+      recapReqRef.current += 1;
+    };
   }, [fetchClassHeader, fetchParticipants, fetchSessions, fetchGrades]);
 
   // Tab 2 handlers
@@ -263,7 +329,7 @@ export function LecturerClassDetailPage() {
         setSessionSuccess('Pertemuan baru berhasil dibuat.');
       }
       setSessionModalOpen(false);
-      await fetchSessions();
+      await fetchSessions({ silent: true });
     } catch (err) {
       setSessionModalError(err);
     } finally {
@@ -282,7 +348,7 @@ export function LecturerClassDetailPage() {
         `Pertemuan ${deleteTarget.session_number} berhasil dihapus.`
       );
       setDeleteTarget(null);
-      await fetchSessions();
+      await fetchSessions({ silent: true });
     } catch (err) {
       setDeleteModalError(err);
     } finally {
@@ -303,7 +369,7 @@ export function LecturerClassDetailPage() {
           ? 'Presensi pertemuan berhasil dibuka.'
           : 'Presensi pertemuan berhasil ditutup.'
       );
-      await fetchSessions();
+      await fetchSessions({ silent: true });
     } catch (err) {
       setSessionActionError(err);
     } finally {
@@ -330,7 +396,7 @@ export function LecturerClassDetailPage() {
       );
       setReopenTarget(null);
       setReopenReason('');
-      await fetchSessions();
+      await fetchSessions({ silent: true });
     } catch (err) {
       setReopenModalError(err);
     } finally {
@@ -339,18 +405,23 @@ export function LecturerClassDetailPage() {
   };
 
   const loadSessionRecap = async (session) => {
+    const reqId = ++recapReqRef.current;
     setRecapSession(session);
     setLoadingRecap(true);
     setRecapError(null);
     setRecapSuccess('');
     try {
       const res = await api.get(`/lecturer/sessions/${session.id}/attendances`);
+      if (reqId !== recapReqRef.current) return;
       setRecapData(extractPayload(res));
     } catch (err) {
+      if (reqId !== recapReqRef.current) return;
       setRecapError(err);
       setRecapData(null);
     } finally {
-      setLoadingRecap(false);
+      if (reqId === recapReqRef.current) {
+        setLoadingRecap(false);
+      }
     }
   };
 
@@ -434,11 +505,18 @@ export function LecturerClassDetailPage() {
     setGradeActionError(null);
     setGradeSuccess('');
     try {
+      const savedIds = new Set(
+        draftValidation.changedEntries.map((entry) => entry.student_id)
+      );
       await api.put(`/lecturer/classes/${classId}/grades`, {
         grades: draftValidation.changedEntries,
       });
       setGradeSuccess('Draft nilai berhasil disimpan.');
-      await fetchGrades();
+      await fetchGrades({
+        silent: true,
+        preserveDirty: true,
+        resetIds: savedIds,
+      });
     } catch (err) {
       setGradeActionError(err);
     } finally {
@@ -454,7 +532,7 @@ export function LecturerClassDetailPage() {
       await api.post(`/lecturer/classes/${classId}/grades/publish`);
       setPublishModalOpen(false);
       setGradeSuccess('Nilai kelas berhasil dipublikasikan.');
-      await fetchGrades();
+      await fetchGrades({ silent: true, preserveDirty: true });
     } catch (err) {
       setPublishModalOpen(false);
       setGradeActionError(err);
@@ -503,11 +581,16 @@ export function LecturerClassDetailPage() {
           },
         ],
       });
+      const revisedId = revisionTarget.student_id;
       setRevisionTarget(null);
       setGradeSuccess(
         `Revisi nilai ${revisionTarget.name} berhasil disimpan dan dicatat di jejak audit.`
       );
-      await fetchGrades();
+      await fetchGrades({
+        silent: true,
+        preserveDirty: true,
+        resetIds: new Set([revisedId]),
+      });
     } catch (err) {
       setRevisionModalError(err);
     } finally {

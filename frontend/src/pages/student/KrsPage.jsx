@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
-import { CheckCircle2, Clock, MapPin, Search, User } from 'lucide-react'
+import { CheckCircle2, Clock, MapPin, RefreshCw, Search, User } from 'lucide-react'
 import api, { unwrapData, unwrapList } from '../../lib/api'
 import { parseApiError } from '../../lib/apiError'
 import {
@@ -35,7 +35,7 @@ function timesOverlap(a, b) {
 
 export function KrsPage() {
   const { showToast } = useToast()
-  const { user, refreshSemester } = useAuth()
+  const { user, setActiveSemester } = useAuth()
 
   const [semester, setSemester] = useState(null)
   const [classes, setClasses] = useState([])
@@ -52,42 +52,59 @@ export function KrsPage() {
   const [confirmModalOpen, setConfirmModalOpen] = useState(false)
   const [confirming, setConfirming] = useState(false)
 
-  const loadAll = useCallback(async () => {
-    setLoading(true)
-    setPageError(null)
-    try {
-      const [semRes, clsRes, spRes] = await Promise.all([
-        api.get('/student/semesters'),
-        api.get('/student/classes'),
-        api.get('/student/study-plan'),
-      ])
-      const semList = unwrapList(semRes)
-      const spData = unwrapData(spRes)
-      const activeSem =
-        spData?.semester || semList.find((s) => s.is_active) || semList[0] || null
-      setSemester(activeSem)
-      setClasses(unwrapList(clsRes))
-
-      if (spData?.max_credits) {
-        setMaxCredits(Number(spData.max_credits))
-      }
-      const plan = spData?.study_plan || null
-      setStudyPlan(plan)
-      const initialIds = Array.isArray(plan?.items)
-        ? plan.items.map((item) => item.course_class_id)
-        : []
-      setSelectedIds(initialIds)
-      refreshSemester()
-    } catch (err) {
-      setPageError(err)
-    } finally {
-      setLoading(false)
-    }
-  }, [refreshSemester])
-
   useEffect(() => {
-    loadAll()
-  }, [loadAll])
+    let active = true
+
+    const init = async () => {
+      setLoading(true)
+      setPageError(null)
+      try {
+        const [semRes, clsRes, spRes] = await Promise.all([
+          api.get('/student/semesters'),
+          api.get('/student/classes'),
+          api.get('/student/study-plan'),
+        ])
+        if (!active) return
+
+        const semList = unwrapList(semRes)
+        const spData = unwrapData(spRes)
+        const activeSem =
+          spData?.semester || semList.find((s) => s.is_active) || semList[0] || null
+        setSemester(activeSem)
+        setClasses(unwrapList(clsRes))
+
+        if (spData?.max_credits) {
+          setMaxCredits(Number(spData.max_credits))
+        }
+        const plan = spData?.study_plan || null
+        setStudyPlan(plan)
+        const initialIds = Array.isArray(plan?.items)
+          ? plan.items.map((item) => item.course_class_id)
+          : []
+        setSelectedIds(initialIds)
+
+        if (activeSem) {
+          setActiveSemester((prev) =>
+            prev?.id === activeSem.id &&
+            prev?.enrollment_start_at === activeSem.enrollment_start_at &&
+            prev?.enrollment_end_at === activeSem.enrollment_end_at
+              ? prev
+              : activeSem
+          )
+        }
+      } catch (err) {
+        if (active) setPageError(err)
+      } finally {
+        if (active) setLoading(false)
+      }
+    }
+
+    init()
+    return () => {
+      active = false
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   const krsPeriod = getKrsPeriodStatus(semester)
   const isConfirmed = studyPlan?.status === 'confirmed'
@@ -154,14 +171,14 @@ export function KrsPage() {
     )
   }
 
-  const refreshCatalogOnly = async () => {
+  const refreshCatalogOnly = useCallback(async () => {
     try {
       const clsRes = await api.get('/student/classes')
       setClasses(unwrapList(clsRes))
     } catch {
       // ignore secondary refresh error
     }
-  }
+  }, [])
 
   const handleSaveDraft = async () => {
     setActionError(null)
@@ -191,12 +208,35 @@ export function KrsPage() {
         course_class_ids: selectedIds,
       })
       const data = unwrapData(res)
-      if (data?.study_plan) {
-        setStudyPlan(data.study_plan)
+      const confirmedPlan = data?.study_plan || null
+      if (confirmedPlan) {
+        setStudyPlan(confirmedPlan)
+        if (Array.isArray(confirmedPlan.items)) {
+          setSelectedIds(confirmedPlan.items.map((item) => item.course_class_id))
+        }
       }
       setConfirmModalOpen(false)
       showToast('KRS berhasil dikonfirmasi secara final.')
-      await loadAll()
+
+      // Silent background sync of latest catalog & study plan (never flashes skeleton)
+      try {
+        const [clsRes, spRes] = await Promise.all([
+          api.get('/student/classes'),
+          api.get('/student/study-plan'),
+        ])
+        setClasses(unwrapList(clsRes))
+        const spData = unwrapData(spRes)
+        if (spData?.study_plan) {
+          setStudyPlan(spData.study_plan)
+          if (Array.isArray(spData.study_plan.items)) {
+            setSelectedIds(
+              spData.study_plan.items.map((item) => item.course_class_id)
+            )
+          }
+        }
+      } catch {
+        // ignore silent post-confirm sync error
+      }
     } catch (err) {
       setConfirmModalOpen(false)
       setActionError(err)
@@ -295,18 +335,32 @@ export function KrsPage() {
       )}
 
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <div className="relative w-full sm:max-w-sm">
-          <Search
-            className="h-4 w-4 text-[#64748B] absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none"
-            aria-hidden="true"
-          />
-          <input
-            type="search"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Cari mata kuliah, kode, atau dosen..."
-            className={getControlClass(false, 'pl-9')}
-          />
+        <div className="flex flex-col sm:flex-row sm:items-center gap-2.5 w-full sm:w-auto flex-1">
+          <div className="relative w-full sm:max-w-sm">
+            <Search
+              className="h-4 w-4 text-[#64748B] absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none"
+              aria-hidden="true"
+            />
+            <input
+              type="search"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Cari mata kuliah, kode, atau dosen..."
+              className={getControlClass(false, 'pl-9')}
+            />
+          </div>
+          {!isConfirmed && (
+            <LoadingButton
+              variant="secondary"
+              size="sm"
+              icon={RefreshCw}
+              loadingText="Memuat..."
+              onClick={refreshCatalogOnly}
+              className="self-start sm:self-auto shrink-0"
+            >
+              Refresh Kuota
+            </LoadingButton>
+          )}
         </div>
         <span className="text-xs text-[#64748B]">
           Menampilkan {visibleCatalog.length} kelas

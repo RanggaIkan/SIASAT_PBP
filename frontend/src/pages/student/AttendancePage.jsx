@@ -77,12 +77,14 @@ export function AttendancePage() {
   const [courseClassMeta, setCourseClassMeta] = useState(null);
   const [sessions, setSessions] = useState([]);
   const [loadingSessions, setLoadingSessions] = useState(false);
+  const [refreshingSessions, setRefreshingSessions] = useState(false);
   const [sessionsError, setSessionsError] = useState(null);
 
   const [submittingSessionId, setSubmittingSessionId] = useState(null);
   const [actionError, setActionError] = useState(null);
   const [successMessage, setSuccessMessage] = useState('');
   const inFlightRef = useRef(new Set());
+  const sessionsReqRef = useRef(0);
 
   useEffect(() => {
     let active = true;
@@ -128,12 +130,18 @@ export function AttendancePage() {
     };
   }, []);
 
-  const fetchSessions = useCallback(async (classId) => {
+  const fetchSessions = useCallback(async (classId, { silent = false } = {}) => {
     if (!classId) return;
-    setLoadingSessions(true);
+    const reqId = ++sessionsReqRef.current;
+    if (silent) {
+      setRefreshingSessions(true);
+    } else {
+      setLoadingSessions(true);
+    }
     setSessionsError(null);
     try {
       const res = await api.get(`/student/classes/${classId}/sessions`);
+      if (reqId !== sessionsReqRef.current) return;
       const payload = unwrapData(res);
       setCourseClassMeta(payload?.course_class ?? null);
       const rawSessions = Array.isArray(payload)
@@ -141,17 +149,25 @@ export function AttendancePage() {
         : payload?.sessions ?? payload?.items ?? [];
       setSessions(rawSessions.map(normalizeSession));
     } catch (err) {
+      if (reqId !== sessionsReqRef.current) return;
       setSessionsError(err);
-      setSessions([]);
+      if (!silent) {
+        setSessions([]);
+      }
     } finally {
-      setLoadingSessions(false);
+      if (reqId === sessionsReqRef.current) {
+        setLoadingSessions(false);
+        setRefreshingSessions(false);
+      }
     }
   }, []);
 
   useEffect(() => {
-    if (selectedClassId) {
-      fetchSessions(selectedClassId);
-    }
+    if (!selectedClassId) return;
+    fetchSessions(selectedClassId);
+    return () => {
+      sessionsReqRef.current += 1;
+    };
   }, [selectedClassId, fetchSessions]);
 
   const activeClass = useMemo(() => {
@@ -207,7 +223,7 @@ export function AttendancePage() {
     } catch (err) {
       setActionError(err);
       if (selectedClassId) {
-        fetchSessions(selectedClassId);
+        fetchSessions(selectedClassId, { silent: true });
       }
     } finally {
       inFlightRef.current.delete(sessionId);
@@ -309,8 +325,9 @@ export function AttendancePage() {
             <LoadingButton
               variant="secondary"
               icon={RefreshCw}
-              loading={loadingSessions}
-              onClick={() => fetchSessions(selectedClassId)}
+              loading={loadingSessions || refreshingSessions}
+              disabled={loadingSessions || refreshingSessions}
+              onClick={() => fetchSessions(selectedClassId, { silent: true })}
             >
               Muat Ulang
             </LoadingButton>

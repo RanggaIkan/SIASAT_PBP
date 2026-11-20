@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { CalendarDays, ChevronDown, ChevronRight, Clock, MapPin, User } from 'lucide-react'
 import api, { unwrapData } from '../../lib/api'
@@ -18,35 +18,39 @@ export function SchedulePage() {
   const [error, setError] = useState(null)
   const [expandedDay, setExpandedDay] = useState('Monday')
 
-  const fetchSchedule = useCallback(async () => {
-    setLoading(true)
-    setError(null)
-    try {
-      const res = await api.get('/student/schedule')
-      const data = unwrapData(res)
-      setSemester(data?.semester || null)
-      const list = Array.isArray(data?.items) ? data.items : []
-      setItems(list)
-      const firstDayWithClass = DAY_OPTIONS.find((d) =>
-        list.some(
-          (item) =>
-            String(item.course_class?.day_of_week || '').toLowerCase() ===
-            d.value.toLowerCase()
+  useEffect(() => {
+    let active = true
+    const load = async () => {
+      setLoading(true)
+      setError(null)
+      try {
+        const res = await api.get('/student/schedule')
+        if (!active) return
+        const data = unwrapData(res)
+        setSemester(data?.semester || null)
+        const list = Array.isArray(data?.items) ? data.items : []
+        setItems(list)
+        const firstDayWithClass = DAY_OPTIONS.find((d) =>
+          list.some(
+            (item) =>
+              String(item.course_class?.day_of_week || '').toLowerCase() ===
+              d.value.toLowerCase()
+          )
         )
-      )
-      if (firstDayWithClass) {
-        setExpandedDay(firstDayWithClass.value)
+        if (firstDayWithClass) {
+          setExpandedDay(firstDayWithClass.value)
+        }
+      } catch (err) {
+        if (active) setError(err)
+      } finally {
+        if (active) setLoading(false)
       }
-    } catch (err) {
-      setError(err)
-    } finally {
-      setLoading(false)
+    }
+    load()
+    return () => {
+      active = false
     }
   }, [])
-
-  useEffect(() => {
-    fetchSchedule()
-  }, [fetchSchedule])
 
   const groupedByDay = useMemo(() => {
     const groups = {}

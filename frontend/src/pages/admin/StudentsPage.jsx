@@ -52,8 +52,8 @@ export function StudentsPage() {
   const [saving, setSaving] = useState(false)
   const [formError, setFormError] = useState(null)
 
-  const fetchStudents = useCallback(async () => {
-    setLoading(true)
+  const fetchStudents = useCallback(async (silent = false) => {
+    if (!silent) setLoading(true)
     setPageError(null)
     try {
       const res = await api.get('/admin/students')
@@ -61,7 +61,7 @@ export function StudentsPage() {
     } catch (err) {
       setPageError(err)
     } finally {
-      setLoading(false)
+      if (!silent) setLoading(false)
     }
   }, [])
 
@@ -138,7 +138,7 @@ export function StudentsPage() {
         showToast('Mahasiswa baru berhasil ditambahkan.')
       }
       setModalOpen(false)
-      await fetchStudents()
+      await fetchStudents(true)
     } catch (err) {
       setFormError(err)
     } finally {

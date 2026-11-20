@@ -48,8 +48,8 @@ export function LecturersPage() {
   const [saving, setSaving] = useState(false)
   const [formError, setFormError] = useState(null)
 
-  const fetchLecturers = useCallback(async () => {
-    setLoading(true)
+  const fetchLecturers = useCallback(async (silent = false) => {
+    if (!silent) setLoading(true)
     setPageError(null)
     try {
       const res = await api.get('/admin/lecturers')
@@ -57,7 +57,7 @@ export function LecturersPage() {
     } catch (err) {
       setPageError(err)
     } finally {
-      setLoading(false)
+      if (!silent) setLoading(false)
     }
   }, [])
 
@@ -130,7 +130,7 @@ export function LecturersPage() {
         showToast('Dosen baru berhasil ditambahkan.')
       }
       setModalOpen(false)
-      await fetchLecturers()
+      await fetchLecturers(true)
     } catch (err) {
       setFormError(err)
     } finally {

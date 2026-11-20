@@ -1,4 +1,4 @@
-import React, { createContext, useCallback, useContext, useState } from 'react'
+import React, { createContext, useCallback, useContext, useMemo, useState } from 'react'
 import { CheckCircle2, Info, AlertCircle, X } from 'lucide-react'
 
 const ToastContext = createContext(null)
@@ -40,8 +40,10 @@ export function ToastProvider({ children }) {
     }, 4000)
   }, [])
 
+  const contextValue = useMemo(() => ({ showToast, dismiss }), [showToast, dismiss])
+
   return (
-    <ToastContext.Provider value={{ showToast, dismiss }}>
+    <ToastContext.Provider value={contextValue}>
       {children}
       <div
         aria-live="polite"

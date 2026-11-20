@@ -43,8 +43,8 @@ export function SemestersPage() {
   const [saving, setSaving] = useState(false)
   const [formError, setFormError] = useState(null)
 
-  const fetchSemesters = useCallback(async () => {
-    setLoading(true)
+  const fetchSemesters = useCallback(async (silent = false) => {
+    if (!silent) setLoading(true)
     setPageError(null)
     try {
       const res = await api.get('/admin/semesters')
@@ -52,7 +52,7 @@ export function SemestersPage() {
     } catch (err) {
       setPageError(err)
     } finally {
-      setLoading(false)
+      if (!silent) setLoading(false)
     }
   }, [])
 
@@ -111,7 +111,7 @@ export function SemestersPage() {
         showToast('Semester baru berhasil ditambahkan.')
       }
       setModalOpen(false)
-      await Promise.all([fetchSemesters(), refreshSemester()])
+      await Promise.all([fetchSemesters(true), refreshSemester()])
     } catch (err) {
       setFormError(err)
     } finally {
@@ -151,7 +151,7 @@ export function SemestersPage() {
           ? `Periode KRS ${row.name} dibuka.`
           : `Periode KRS ${row.name} ditutup.`
       )
-      await Promise.all([fetchSemesters(), refreshSemester()])
+      await Promise.all([fetchSemesters(true), refreshSemester()])
     } catch (err) {
       setPageError(err)
     }

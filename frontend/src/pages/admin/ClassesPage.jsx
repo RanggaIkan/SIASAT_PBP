@@ -93,8 +93,8 @@ export function ClassesPage() {
     fetchMeta()
   }, [fetchMeta])
 
-  const fetchClasses = useCallback(async (semesterId) => {
-    setLoadingClasses(true)
+  const fetchClasses = useCallback(async (semesterId, silent = false) => {
+    if (!silent) setLoadingClasses(true)
     setPageError(null)
     try {
       const params = semesterId ? { semester_id: semesterId } : {}
@@ -103,7 +103,7 @@ export function ClassesPage() {
     } catch (err) {
       setPageError(err)
     } finally {
-      setLoadingClasses(false)
+      if (!silent) setLoadingClasses(false)
     }
   }, [])
 
@@ -171,7 +171,7 @@ export function ClassesPage() {
         showToast('Kelas paralel baru berhasil dibuka.')
       }
       setModalOpen(false)
-      await fetchClasses(selectedSemesterId)
+      await fetchClasses(selectedSemesterId, true)
     } catch (err) {
       setFormError(err)
     } finally {

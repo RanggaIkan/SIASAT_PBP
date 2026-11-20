@@ -1,4 +1,12 @@
-import React, { createContext, useCallback, useContext, useEffect, useState } from 'react'
+import React, {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react'
 import api, { TOKEN_KEY, USER_KEY, unwrapData, unwrapList } from '../lib/api'
 import { useToast } from '../components/ui/Toast'
 
@@ -23,11 +31,18 @@ export function AuthProvider({ children }) {
   })
   const [loading, setLoading] = useState(() => Boolean(localStorage.getItem(TOKEN_KEY)))
   const [activeSemester, setActiveSemester] = useState(null)
+  const userRef = useRef(user)
+  userRef.current = user
 
   const refreshSemester = useCallback(async (targetUser) => {
-    const role = targetUser?.role
+    const effectiveUser =
+      targetUser !== undefined &&
+      (targetUser === null || typeof targetUser?.role === 'string')
+        ? targetUser
+        : userRef.current
+    const role = effectiveUser?.role
     if (role !== 'admin' && role !== 'student') {
-      setActiveSemester(null)
+      setActiveSemester((prev) => (prev === null ? prev : null))
       return null
     }
     try {
@@ -35,7 +50,20 @@ export function AuthProvider({ children }) {
       const res = await api.get(endpoint)
       const list = unwrapList(res)
       const active = list.find((s) => s.is_active) || list[0] || null
-      setActiveSemester(active)
+      setActiveSemester((prev) => {
+        if (
+          prev &&
+          active &&
+          prev.id === active.id &&
+          prev.is_active === active.is_active &&
+          prev.enrollment_start_at === active.enrollment_start_at &&
+          prev.enrollment_end_at === active.enrollment_end_at &&
+          prev.name === active.name
+        ) {
+          return prev
+        }
+        return active
+      })
       return active
     } catch {
       return null
@@ -53,12 +81,14 @@ export function AuthProvider({ children }) {
       const res = await api.get('/auth/me')
       const payload = unwrapData(res)
       const me = payload?.user || payload
+      userRef.current = me
       setUser(me)
       localStorage.setItem(USER_KEY, JSON.stringify(me))
       await refreshSemester(me)
     } catch {
       localStorage.removeItem(TOKEN_KEY)
       localStorage.removeItem(USER_KEY)
+      userRef.current = null
       setUser(null)
       setActiveSemester(null)
     } finally {
@@ -72,6 +102,7 @@ export function AuthProvider({ children }) {
 
   useEffect(() => {
     const onUnauthorized = (e) => {
+      userRef.current = null
       setUser(null)
       setActiveSemester(null)
       showToast(e?.detail?.message || 'Sesi Anda telah berakhir', 'info')
@@ -91,6 +122,7 @@ export function AuthProvider({ children }) {
       }
       if (loggedUser) {
         localStorage.setItem(USER_KEY, JSON.stringify(loggedUser))
+        userRef.current = loggedUser
         setUser(loggedUser)
         await refreshSemester(loggedUser)
       }
@@ -107,23 +139,27 @@ export function AuthProvider({ children }) {
     } finally {
       localStorage.removeItem(TOKEN_KEY)
       localStorage.removeItem(USER_KEY)
+      userRef.current = null
       setUser(null)
       setActiveSemester(null)
     }
   }, [])
 
+  const contextValue = useMemo(
+    () => ({
+      user,
+      loading,
+      activeSemester,
+      setActiveSemester,
+      refreshSemester,
+      login,
+      logout,
+    }),
+    [user, loading, activeSemester, refreshSemester, login, logout]
+  )
+
   return (
-    <AuthContext.Provider
-      value={{
-        user,
-        loading,
-        activeSemester,
-        setActiveSemester,
-        refreshSemester: () => refreshSemester(user),
-        login,
-        logout,
-      }}
-    >
+    <AuthContext.Provider value={contextValue}>
       {children}
     </AuthContext.Provider>
   )
