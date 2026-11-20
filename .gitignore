@@ -1,0 +1,19 @@
+# Backend (Laravel)
+backend/vendor/
+backend/.env
+backend/.env.backup
+backend/.phpunit.result.cache
+backend/storage/*.key
+backend/bootstrap/cache/*.php
+!backend/bootstrap/cache/.gitkeep
+
+# Frontend (React + Vite)
+frontend/node_modules/
+frontend/dist/
+frontend/.env
+frontend/.env.local
+
+# OS & Logs
+.DS_Store
+Thumbs.db
+*.log
