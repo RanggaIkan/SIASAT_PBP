@@ -13,3 +13,131 @@
     @apply font-heading font-semibold text-[#1E293B];
   }
 }
+
+@page {
+  size: A4 landscape;
+  margin: 14mm;
+}
+
+@media print {
+  html,
+  body,
+  #root {
+    min-height: 0 !important;
+    background: #fff !important;
+  }
+
+  body * {
+    visibility: hidden !important;
+  }
+
+  #krs-print-card,
+  #krs-print-card * {
+    visibility: visible !important;
+  }
+
+  #krs-print-card {
+    display: block !important;
+    position: absolute !important;
+    inset: 0 auto auto 0 !important;
+    width: 100% !important;
+    padding: 0 !important;
+    color: #1e293b !important;
+    font-family: Arial, sans-serif !important;
+  }
+
+  .krs-print-header {
+    padding-bottom: 14px;
+    border-bottom: 2px solid #334155;
+    text-align: center;
+  }
+
+  .krs-print-header h1 {
+    margin: 8px 0 4px;
+    font-size: 24px;
+  }
+
+  .krs-print-header p,
+  .krs-print-brand {
+    margin: 0;
+    color: #475569 !important;
+    font-size: 11px;
+  }
+
+  .krs-print-brand {
+    font-weight: 700;
+    letter-spacing: 0.08em;
+  }
+
+  .krs-print-student {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px 28px;
+    margin: 18px 0;
+  }
+
+  .krs-print-student div {
+    display: grid;
+    grid-template-columns: 135px 1fr;
+    gap: 8px;
+  }
+
+  .krs-print-student dt,
+  .krs-print-summary span,
+  .krs-print-footnote {
+    color: #475569 !important;
+    font-size: 11px;
+  }
+
+  .krs-print-student dd {
+    margin: 0;
+    font-size: 12px;
+    font-weight: 600;
+  }
+
+  .krs-print-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 11px;
+  }
+
+  .krs-print-table th,
+  .krs-print-table td {
+    padding: 8px;
+    border: 1px solid #cbd5e1;
+    text-align: left;
+    vertical-align: top;
+  }
+
+  .krs-print-table th {
+    background: #f1f5f9 !important;
+    font-weight: 700;
+  }
+
+  .krs-print-table thead {
+    display: table-header-group;
+  }
+
+  .krs-print-table tr {
+    break-inside: avoid;
+  }
+
+  .krs-print-table td:first-child span {
+    display: block;
+    margin-top: 3px;
+  }
+
+  .krs-print-summary {
+    display: flex;
+    justify-content: space-between;
+    gap: 16px;
+    margin-top: 16px;
+    padding-top: 10px;
+    border-top: 1px solid #cbd5e1;
+    font-size: 12px;
+  }
+
+  .krs-print-footnote {
+    margin-top: 16px;
+  }
+}

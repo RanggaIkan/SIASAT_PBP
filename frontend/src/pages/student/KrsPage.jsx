@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
-import { CheckCircle2, Clock, MapPin, RefreshCw, Search, User } from 'lucide-react'
+import { CheckCircle2, Clock, MapPin, Printer, RefreshCw, Search, User } from 'lucide-react'
 import api, { unwrapData, unwrapList } from '../../lib/api'
 import { parseApiError } from '../../lib/apiError'
 import {
@@ -8,6 +8,7 @@ import {
   getKrsPeriodStatus,
 } from '../../lib/datetime'
 import { useAuth } from '../../context/AuthContext'
+import { StudyPlanPrintCard } from '../../components/academic/StudyPlanPrintCard'
 import {
   AlertBanner,
   Card,
@@ -249,6 +250,8 @@ export function KrsPage() {
     }
   }
 
+  const handlePrintStudyPlan = () => window.print()
+
   if (loading) {
     return (
       <Card padding="p-0">
@@ -269,6 +272,16 @@ export function KrsPage() {
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
+          {isConfirmed && (
+            <LoadingButton
+              variant="secondary"
+              size="sm"
+              icon={Printer}
+              onClick={handlePrintStudyPlan}
+            >
+              Cetak / Simpan PDF
+            </LoadingButton>
+          )}
           <StatusBadge
             type="studyPlan"
             value={studyPlan?.status || 'draft'}
@@ -294,6 +307,15 @@ export function KrsPage() {
         <AlertBanner
           variant="success"
           message="KRS Anda telah dikonfirmasi (final). Daftar kelas di bawah ini bersifat tetap."
+        />
+      )}
+
+      {isConfirmed && (
+        <StudyPlanPrintCard
+          studyPlan={studyPlan}
+          semester={semester}
+          student={user?.student}
+          studentName={user?.name}
         />
       )}
 
