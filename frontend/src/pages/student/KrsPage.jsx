@@ -414,11 +414,7 @@ export function KrsPage() {
             return (
               <div
                 key={cls.id}
-                className={`bg-white rounded-2xl border p-5 shadow-sm flex flex-col justify-between gap-4 transition ${
-                  isSelected
-                    ? 'border-[#4F46E5] ring-2 ring-[#4F46E5]/25'
-                    : 'border-slate-200'
-                }`}
+                className="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm flex flex-col justify-between gap-4 transition hover:border-[#4F46E5] hover:ring-2 hover:ring-[#4F46E5]/25"
               >
                 <div className="space-y-3">
                   <div className="flex items-start justify-between gap-2">
