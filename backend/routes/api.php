@@ -15,6 +15,7 @@ use App\Http\Controllers\Api\Lecturer\LecturerClassController;
 use App\Http\Controllers\Api\Student\CatalogController;
 use App\Http\Controllers\Api\Student\ScheduleController;
 use App\Http\Controllers\Api\Student\StudentSessionAttendanceController;
+use App\Http\Controllers\Api\Student\StudentProfilePhotoController;
 use App\Http\Controllers\Api\Student\StudentTranscriptController;
 use App\Http\Controllers\Api\Student\StudyPlanController;
 use App\Support\ApiResponse;
@@ -77,6 +78,7 @@ Route::middleware(['auth:sanctum', 'active'])->group(function () {
     });
 
     Route::prefix('student')->middleware('role:student')->group(function () {
+        Route::post('/profile/photo', [StudentProfilePhotoController::class, 'store']);
         Route::get('/semesters', [CatalogController::class, 'semesters']);
         Route::get('/classes', [CatalogController::class, 'classes']);
 

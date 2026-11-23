@@ -58,6 +58,7 @@ Jalankan migrasi, seeder (`InitialSeeder` + `DemoSeeder`), lalu nyalakan server 
 
 ```powershell
 php artisan migrate --seed
+php artisan storage:link
 php artisan serve --host=127.0.0.1 --port=8000
 ```
 

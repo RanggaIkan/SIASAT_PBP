@@ -70,6 +70,16 @@ export function AuthProvider({ children }) {
     }
   }, [])
 
+  const updateUser = useCallback((updates) => {
+    setUser((currentUser) => {
+      if (!currentUser) return currentUser
+      const nextUser = { ...currentUser, ...updates }
+      userRef.current = nextUser
+      localStorage.setItem(USER_KEY, JSON.stringify(nextUser))
+      return nextUser
+    })
+  }, [])
+
   const bootstrap = useCallback(async () => {
     const token = localStorage.getItem(TOKEN_KEY)
     if (!token) {
@@ -148,6 +158,7 @@ export function AuthProvider({ children }) {
   const contextValue = useMemo(
     () => ({
       user,
+      updateUser,
       loading,
       activeSemester,
       setActiveSemester,
@@ -155,7 +166,7 @@ export function AuthProvider({ children }) {
       login,
       logout,
     }),
-    [user, loading, activeSemester, refreshSemester, login, logout]
+    [user, loading, activeSemester, updateUser, refreshSemester, login, logout]
   )
 
   return (
