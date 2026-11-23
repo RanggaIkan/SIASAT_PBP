@@ -300,7 +300,6 @@ export function KrsPage() {
             type="studyPlan"
             value={studyPlan?.status || 'draft'}
           />
-          <StatusBadge preset={krsPeriod} />
         </div>
       </div>
 

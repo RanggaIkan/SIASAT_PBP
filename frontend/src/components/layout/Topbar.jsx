@@ -1,7 +1,5 @@
 import React from 'react'
 import { CalendarDays, Menu } from 'lucide-react'
-import { StatusBadge } from '../ui/StatusBadge'
-import { getKrsPeriodStatus } from '../../lib/datetime'
 
 const ROLE_LABELS = {
   admin: 'Admin Akademik',
@@ -19,8 +17,6 @@ function getInitials(name) {
 export function Topbar({ title, user, activeSemester, semesterOverride, onOpenMenu }) {
   const role = user?.role
   const semester = semesterOverride || activeSemester
-  const showKrsStatus = role === 'student' || role === 'admin'
-  const krsPreset = showKrsStatus ? getKrsPeriodStatus(semester) : null
 
   const identityCode =
     user?.student?.student_number || user?.lecturer?.lecturer_number || null
@@ -48,12 +44,6 @@ export function Topbar({ title, user, activeSemester, semesterOverride, onOpenMe
           <div className="hidden md:inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-medium text-[#64748B]">
             <CalendarDays className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
             <span>{semester.name}</span>
-          </div>
-        )}
-
-        {showKrsStatus && krsPreset && (
-          <div className="hidden sm:inline-flex">
-            <StatusBadge preset={krsPreset} />
           </div>
         )}
 
