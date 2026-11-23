@@ -1,6 +1,5 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import {
-  Camera,
   CheckCircle2,
   Clock,
   Download,
@@ -45,7 +44,7 @@ function timesOverlap(a, b) {
 
 export function KrsPage() {
   const { showToast } = useToast()
-  const { user, updateUser, setActiveSemester } = useAuth()
+  const { user, setActiveSemester } = useAuth()
 
   const [semester, setSemester] = useState(null)
   const [classes, setClasses] = useState([])
@@ -61,9 +60,6 @@ export function KrsPage() {
   const [actionError, setActionError] = useState(null)
   const [confirmModalOpen, setConfirmModalOpen] = useState(false)
   const [confirming, setConfirming] = useState(false)
-  const [uploadingPhoto, setUploadingPhoto] = useState(false)
-  const [photoError, setPhotoError] = useState(null)
-  const photoInputRef = useRef(null)
 
   useEffect(() => {
     let active = true
@@ -276,38 +272,6 @@ export function KrsPage() {
     window.print()
   }
 
-  const handlePhotoChange = async (event) => {
-    const photo = event.target.files?.[0]
-    event.target.value = ''
-    if (!photo) return
-
-    if (!['image/jpeg', 'image/png', 'image/webp'].includes(photo.type)) {
-      setPhotoError('Gunakan foto berformat JPG, PNG, atau WebP.')
-      return
-    }
-    if (photo.size > 2 * 1024 * 1024) {
-      setPhotoError('Ukuran foto maksimal 2 MB.')
-      return
-    }
-
-    setUploadingPhoto(true)
-    setPhotoError(null)
-    try {
-      const formData = new FormData()
-      formData.append('photo', photo)
-      const response = await api.post('/student/profile/photo', formData, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-      })
-      const data = unwrapData(response)
-      if (data?.user) updateUser(data.user)
-      showToast('Foto profil diperbarui.')
-    } catch (err) {
-      setPhotoError(parseApiError(err)?.message || 'Foto profil gagal disimpan.')
-    } finally {
-      setUploadingPhoto(false)
-    }
-  }
-
   if (loading) {
     return (
       <Card padding="p-0">
@@ -338,70 +302,6 @@ export function KrsPage() {
           </LoadingButton>
         )}
       </div>
-
-      <section
-        aria-label="Profil mahasiswa"
-        className="flex flex-col gap-4 rounded-2xl border border-slate-200 bg-white px-5 py-4 shadow-sm sm:flex-row sm:items-center"
-      >
-        <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-full bg-indigo-50 ring-1 ring-slate-200">
-          {user?.profile_photo_url ? (
-            <img
-              src={user.profile_photo_url}
-              alt={`Foto profil ${user.name || 'mahasiswa'}`}
-              className="h-full w-full object-cover"
-            />
-          ) : (
-            <span
-              className="flex h-full w-full items-center justify-center font-heading text-xl font-semibold text-[#4338CA]"
-              aria-hidden="true"
-            >
-              {(user?.name || 'M').trim().charAt(0).toUpperCase()}
-            </span>
-          )}
-        </div>
-        <div className="grid min-w-0 flex-1 grid-cols-1 gap-x-8 gap-y-2 sm:grid-cols-3">
-          <div className="min-w-0">
-            <p className="text-xs text-[#64748B]">Nama</p>
-            <p className="truncate text-sm font-semibold text-[#1E293B]">
-              {user?.name || '—'}
-            </p>
-          </div>
-          <div>
-            <p className="text-xs text-[#64748B]">NIM</p>
-            <p className="font-mono text-sm font-medium text-[#1E293B]">
-              {user?.student?.student_number || '—'}
-            </p>
-          </div>
-          <div className="min-w-0">
-            <p className="text-xs text-[#64748B]">Program studi</p>
-            <p className="truncate text-sm font-medium text-[#1E293B]">
-              {user?.student?.program || '—'}
-            </p>
-          </div>
-        </div>
-        <input
-          ref={photoInputRef}
-          type="file"
-          accept="image/jpeg,image/png,image/webp"
-          className="sr-only"
-          aria-label="Pilih foto profil"
-          onChange={handlePhotoChange}
-        />
-        <button
-          type="button"
-          onClick={() => photoInputRef.current?.click()}
-          disabled={uploadingPhoto}
-          className="inline-flex h-9 shrink-0 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-3 text-sm font-medium text-[#334155] transition hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4F46E5]/40 disabled:cursor-not-allowed disabled:opacity-60"
-        >
-          <Camera className="h-4 w-4" aria-hidden="true" />
-          {uploadingPhoto
-            ? 'Mengunggah…'
-            : user?.profile_photo_url
-              ? 'Ganti foto'
-              : 'Unggah foto'}
-        </button>
-      </section>
-      {photoError && <AlertBanner variant="error" message={photoError} />}
 
       {pageError && <AlertBanner error={pageError} />}
 
@@ -522,7 +422,7 @@ export function KrsPage() {
             return (
               <div
                 key={cls.id}
-                className="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm flex flex-col justify-between gap-4 transition hover:border-[#4F46E5] hover:ring-2 hover:ring-[#4F46E5]/25"
+                className="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm flex flex-col justify-between gap-4 transition-[transform,border-color,box-shadow] duration-150 ease-out hover:-translate-y-0.5 hover:border-[#4F46E5] hover:shadow-md hover:ring-2 hover:ring-[#4F46E5]/25 motion-reduce:transition-none"
               >
                 <div className="space-y-3">
                   <div className="flex items-start justify-between gap-2">
