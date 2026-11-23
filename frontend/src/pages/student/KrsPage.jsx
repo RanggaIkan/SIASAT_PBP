@@ -23,7 +23,6 @@ import {
   EmptyState,
   LoadingButton,
   Modal,
-  ProgressBar,
   SkeletonList,
   StatusBadge,
   getControlClass,
@@ -325,32 +324,29 @@ export function KrsPage() {
         />
       )}
 
-      <Card>
-        <div className="flex flex-wrap items-center justify-between gap-3 mb-2.5">
+      <Card
+        padding="px-6 py-5"
+        className="w-full max-w-sm border-indigo-100 bg-indigo-50/70"
+      >
+        <div>
+          <p className="text-xs font-semibold tracking-wide text-[#64748B]">
+            Total SKS
+          </p>
           <div>
-            <p className="text-xs font-medium text-[#64748B]">Total SKS Dipilih</p>
-            <p className="font-heading text-2xl font-bold text-[#1E293B] mt-0.5">
+            <p className="mt-1 flex items-baseline gap-2 font-heading">
               <span
-                className={
+                className={`text-4xl leading-none font-bold ${
                   totalSelectedCredits > maxCredits ? 'text-[#BE123C]' : 'text-[#4338CA]'
-                }
+                }`}
               >
                 {totalSelectedCredits}
-              </span>{' '}
-              <span className="text-base font-medium text-[#64748B]">
+              </span>
+              <span className="text-lg font-medium text-[#64748B]">
                 / {maxCredits} SKS
               </span>
             </p>
           </div>
-          <span className="text-xs text-[#64748B]">
-            {selectedClasses.length} kelas dipilih
-          </span>
         </div>
-        <ProgressBar
-          value={totalSelectedCredits}
-          max={maxCredits}
-          danger={totalSelectedCredits > maxCredits}
-        />
         {totalSelectedCredits > maxCredits && (
           <p className="text-xs text-[#BE123C] mt-2">
             Total SKS melebihi batas maksimal ({maxCredits} SKS).
@@ -406,7 +402,6 @@ export function KrsPage() {
             const enrolled = Number(cls.enrolled_count || 0)
             const quota = Number(cls.quota || 0)
             const isFull = quota > 0 && enrolled >= quota
-            const remaining = quota - enrolled
 
             const conflictingSelected = !isSelected
               ? selectedClasses.filter((sel) => timesOverlap(sel, cls))
@@ -469,7 +464,6 @@ export function KrsPage() {
                     <div className="flex flex-wrap gap-1.5 pt-1">
                       {isSelected && <StatusBadge preset="SELECTED" />}
                       {isFull && <StatusBadge preset="QUOTA_FULL" />}
-                      {!isFull && remaining === 1 && <StatusBadge preset="LAST_SEAT" />}
                       {hasScheduleConflict && (
                         <span
                           title={`Bentrok dengan: ${conflictingSelected
@@ -486,18 +480,8 @@ export function KrsPage() {
                   )}
                 </div>
 
-                <div className="space-y-3 pt-2 border-t border-slate-100">
-                  <div className="space-y-1">
-                    <div className="flex items-center justify-between text-xs">
-                      <span className="text-[#64748B]">Kuota kelas</span>
-                      <span className="font-mono font-medium text-[#1E293B]">
-                        {enrolled}/{quota}
-                      </span>
-                    </div>
-                    <ProgressBar value={enrolled} max={quota || 1} danger={isFull} size="sm" />
-                  </div>
-
-                  {!isConfirmed && (
+                {!isConfirmed && (
+                  <div className="border-t border-slate-100 pt-3">
                     <LoadingButton
                       fullWidth
                       size="sm"
@@ -507,8 +491,8 @@ export function KrsPage() {
                     >
                       {isSelected ? 'Batalkan' : 'Pilih'}
                     </LoadingButton>
-                  )}
-                </div>
+                  </div>
+                )}
               </div>
             )
           })}
