@@ -19,9 +19,19 @@ export function StudyPlanPrintCard({ studyPlan, semester, student, studentName }
   return createPortal(
     <section id="krs-print-card" className="hidden" aria-hidden="true">
       <header className="krs-print-header">
-        <p className="krs-print-brand">SIASAT · SISTEM INFORMASI AKADEMIK TERPADU</p>
-        <h1>Kartu Rencana Studi</h1>
-        <p>{semester?.name || 'Semester'}</p>
+        <div className="krs-print-brand-row">
+          <img
+            src={`${import.meta.env.BASE_URL}siasat-logo.png`}
+            alt="SIASAT — Portal Akademik"
+            width="162"
+            height="54"
+          />
+          <time>{formatPrintDate()}</time>
+        </div>
+        <div className="krs-print-title">
+          <h1>Kartu Rencana Studi</h1>
+          <p>{semester?.name || 'Semester'}</p>
+        </div>
       </header>
 
       <dl className="krs-print-student">
@@ -36,10 +46,6 @@ export function StudyPlanPrintCard({ studyPlan, semester, student, studentName }
         <div>
           <dt>Program studi</dt>
           <dd>{student?.study_program || '—'}</dd>
-        </div>
-        <div>
-          <dt>Status KRS</dt>
-          <dd>Terkonfirmasi</dd>
         </div>
       </dl>
 
@@ -82,10 +88,9 @@ export function StudyPlanPrintCard({ studyPlan, semester, student, studentName }
 
       <div className="krs-print-summary">
         <div className="krs-print-total-credits">
-          <span>Total beban studi</span>
-          <strong>{totalCredits} SKS</strong>
+          Total beban studi: {totalCredits} SKS
         </div>
-        <span>Dicetak pada {formatPrintDate()} · Zona waktu WIB</span>
+        <span>Zona waktu WIB</span>
       </div>
       <p className="krs-print-footnote">
         Kartu ini memuat kelas yang tercatat pada KRS final di SIASAT.
