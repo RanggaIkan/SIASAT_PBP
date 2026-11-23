@@ -283,24 +283,16 @@ export function KrsPage() {
             {semester ? semester.name : 'Pilih kelas paralel untuk semester aktif.'}
           </p>
         </div>
-        <div className="flex flex-wrap items-start sm:items-center gap-2">
-          {isConfirmed && (
-            <div className="flex flex-col items-start gap-1">
-              <LoadingButton
-                variant="primary"
-                size="md"
-                icon={Download}
-                onClick={handlePrintStudyPlan}
-              >
-                Unduh Kartu KRS (PDF)
-              </LoadingButton>
-            </div>
-          )}
-          <StatusBadge
-            type="studyPlan"
-            value={studyPlan?.status || 'draft'}
-          />
-        </div>
+        {isConfirmed && (
+          <LoadingButton
+            variant="primary"
+            size="md"
+            icon={Download}
+            onClick={handlePrintStudyPlan}
+          >
+            Unduh Kartu KRS (PDF)
+          </LoadingButton>
+        )}
       </div>
 
       {pageError && <AlertBanner error={pageError} />}
