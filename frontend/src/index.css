@@ -62,6 +62,7 @@
     width: 162px;
     height: 54px;
     object-fit: contain;
+    clip-path: inset(1px);
   }
 
   .krs-print-brand-row time {
