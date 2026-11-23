@@ -250,7 +250,19 @@ export function KrsPage() {
     }
   }
 
-  const handlePrintStudyPlan = () => window.print()
+  const handlePrintStudyPlan = () => {
+    const previousTitle = document.title
+    const studentNumber = String(user?.student?.student_number || 'mahasiswa')
+    const safeStudentNumber = studentNumber.replace(/[^\p{L}\p{N}_-]+/gu, '_')
+    const restoreTitle = () => {
+      document.title = previousTitle
+      window.removeEventListener('afterprint', restoreTitle)
+    }
+
+    document.title = `KRS_${safeStudentNumber}`
+    window.addEventListener('afterprint', restoreTitle, { once: true })
+    window.print()
+  }
 
   if (loading) {
     return (

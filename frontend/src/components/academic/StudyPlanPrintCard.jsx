@@ -1,4 +1,5 @@
 import React from 'react'
+import { createPortal } from 'react-dom'
 import { formatDayName, formatTimeHm } from '../../lib/datetime'
 
 function formatPrintDate() {
@@ -15,7 +16,7 @@ export function StudyPlanPrintCard({ studyPlan, semester, student, studentName }
       items.reduce((sum, item) => sum + Number(item.course_class?.course?.credits || 0), 0)
   )
 
-  return (
+  return createPortal(
     <section id="krs-print-card" className="hidden" aria-hidden="true">
       <header className="krs-print-header">
         <p className="krs-print-brand">SIASAT · SISTEM INFORMASI AKADEMIK TERPADU</p>
@@ -47,7 +48,7 @@ export function StudyPlanPrintCard({ studyPlan, semester, student, studentName }
           <tr>
             <th>Mata kuliah</th>
             <th>Kelas</th>
-            <th>SKS</th>
+            <th className="krs-print-credit-column">SKS</th>
             <th>Dosen pengampu</th>
             <th>Jadwal</th>
             <th>Ruang</th>
@@ -66,7 +67,7 @@ export function StudyPlanPrintCard({ studyPlan, semester, student, studentName }
                   <span>{course.course_name || 'Mata kuliah'}</span>
                 </td>
                 <td>{courseClass.class_code || '—'}</td>
-                <td>{Number(course.credits || 0)}</td>
+                <td className="krs-print-credit-column">{Number(course.credits || 0)}</td>
                 <td>{lecturer}</td>
                 <td>
                   {formatDayName(courseClass.day_of_week)}, {formatTimeHm(courseClass.start_time)}–
@@ -80,13 +81,17 @@ export function StudyPlanPrintCard({ studyPlan, semester, student, studentName }
       </table>
 
       <div className="krs-print-summary">
-        <strong>Total beban studi: {totalCredits} SKS</strong>
+        <div className="krs-print-total-credits">
+          <span>Total beban studi</span>
+          <strong>{totalCredits} SKS</strong>
+        </div>
         <span>Dicetak pada {formatPrintDate()} · Zona waktu WIB</span>
       </div>
       <p className="krs-print-footnote">
         Kartu ini memuat kelas yang tercatat pada KRS final di SIASAT.
       </p>
-    </section>
+    </section>,
+    document.body
   )
 }
 
