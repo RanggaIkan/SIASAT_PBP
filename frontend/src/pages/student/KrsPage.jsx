@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
-import { CheckCircle2, Clock, MapPin, Printer, RefreshCw, Search, User } from 'lucide-react'
+import { CheckCircle2, Clock, Download, MapPin, RefreshCw, Search, User } from 'lucide-react'
 import api, { unwrapData, unwrapList } from '../../lib/api'
 import { parseApiError } from '../../lib/apiError'
 import {
@@ -283,16 +283,21 @@ export function KrsPage() {
             {semester ? semester.name : 'Pilih kelas paralel untuk semester aktif.'}
           </p>
         </div>
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex flex-wrap items-start sm:items-center gap-2">
           {isConfirmed && (
-            <LoadingButton
-              variant="secondary"
-              size="sm"
-              icon={Printer}
-              onClick={handlePrintStudyPlan}
-            >
-              Cetak / Simpan PDF
-            </LoadingButton>
+            <div className="flex flex-col items-start gap-1">
+              <LoadingButton
+                variant="primary"
+                size="md"
+                icon={Download}
+                onClick={handlePrintStudyPlan}
+              >
+                Unduh Kartu KRS (PDF)
+              </LoadingButton>
+              <span className="text-xs text-[#64748B]">
+                Di dialog cetak, pilih “Simpan sebagai PDF”.
+              </span>
+            </div>
           )}
           <StatusBadge
             type="studyPlan"
