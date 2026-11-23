@@ -294,9 +294,6 @@ export function KrsPage() {
               >
                 Unduh Kartu KRS (PDF)
               </LoadingButton>
-              <span className="text-xs text-[#64748B]">
-                Di dialog cetak, pilih “Simpan sebagai PDF”.
-              </span>
             </div>
           )}
           <StatusBadge
