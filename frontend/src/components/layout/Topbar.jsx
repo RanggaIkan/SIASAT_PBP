@@ -66,13 +66,23 @@ export function Topbar({ title, user, activeSemester, semesterOverride, onOpenMe
               {user?.name || user?.username}
             </p>
             <div className="flex items-center gap-1.5 mt-0.5">
-              <span className="rounded-md bg-slate-100 px-1.5 py-0.5 text-[10px] font-medium text-[#64748B]">
-                {ROLE_LABELS[role] || role}
-              </span>
-              {identityCode && (
-                <span className="font-mono text-[11px] text-[#64748B]">
-                  {identityCode}
-                </span>
+              {role === 'student' ? (
+                identityCode && (
+                  <span className="font-mono text-[11px] text-[#64748B]">
+                    {identityCode}
+                  </span>
+                )
+              ) : (
+                <>
+                  <span className="rounded-md bg-slate-100 px-1.5 py-0.5 text-[10px] font-medium text-[#64748B]">
+                    {ROLE_LABELS[role] || role}
+                  </span>
+                  {identityCode && (
+                    <span className="font-mono text-[11px] text-[#64748B]">
+                      {identityCode}
+                    </span>
+                  )}
+                </>
               )}
             </div>
           </div>

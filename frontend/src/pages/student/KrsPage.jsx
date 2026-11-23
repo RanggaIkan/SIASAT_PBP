@@ -318,13 +318,6 @@ export function KrsPage() {
       )}
 
       {isConfirmed && (
-        <AlertBanner
-          variant="success"
-          message="KRS Anda telah dikonfirmasi (final). Daftar kelas di bawah ini bersifat tetap."
-        />
-      )}
-
-      {isConfirmed && (
         <StudyPlanPrintCard
           studyPlan={studyPlan}
           semester={semester}
