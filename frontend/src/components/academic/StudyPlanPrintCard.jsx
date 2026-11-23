@@ -50,6 +50,14 @@ export function StudyPlanPrintCard({ studyPlan, semester, student, studentName }
       </dl>
 
       <table className="krs-print-table">
+        <colgroup>
+          <col className="krs-print-course-col" />
+          <col className="krs-print-class-col" />
+          <col className="krs-print-credit-col" />
+          <col className="krs-print-lecturer-col" />
+          <col className="krs-print-schedule-col" />
+          <col className="krs-print-room-col" />
+        </colgroup>
         <thead>
           <tr>
             <th>Mata kuliah</th>
@@ -92,9 +100,6 @@ export function StudyPlanPrintCard({ studyPlan, semester, student, studentName }
         </div>
         <span>Zona waktu WIB</span>
       </div>
-      <p className="krs-print-footnote">
-        Kartu ini memuat kelas yang tercatat pada KRS final di SIASAT.
-      </p>
     </section>,
     document.body
   )

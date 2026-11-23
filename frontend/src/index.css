@@ -110,17 +110,18 @@
 
   .krs-print-table {
     width: 100%;
-    border-collapse: collapse;
+    border-collapse: separate;
+    border-spacing: 0;
     table-layout: fixed;
     font-size: 11px;
   }
 
-  .krs-print-table th:nth-child(1) { width: 31%; }
-  .krs-print-table th:nth-child(2) { width: 8%; }
-  .krs-print-table th:nth-child(3) { width: 8%; }
-  .krs-print-table th:nth-child(4) { width: 19%; }
-  .krs-print-table th:nth-child(5) { width: 21%; }
-  .krs-print-table th:nth-child(6) { width: 13%; }
+  .krs-print-course-col { width: 31%; }
+  .krs-print-class-col { width: 8%; }
+  .krs-print-credit-col { width: 8%; }
+  .krs-print-lecturer-col { width: 19%; }
+  .krs-print-schedule-col { width: 21%; }
+  .krs-print-room-col { width: 13%; }
 
   .krs-print-table .krs-print-credit-column {
     text-align: center;
@@ -129,9 +130,20 @@
   .krs-print-table th,
   .krs-print-table td {
     padding: 8px;
-    border: 1px solid #cbd5e1;
+    border: 0;
+    border-right: 1px solid #cbd5e1;
+    border-bottom: 1px solid #cbd5e1;
     text-align: left;
     vertical-align: top;
+  }
+
+  .krs-print-table th:first-child,
+  .krs-print-table td:first-child {
+    border-left: 1px solid #cbd5e1;
+  }
+
+  .krs-print-table thead th {
+    border-top: 1px solid #cbd5e1;
   }
 
   .krs-print-table th {
@@ -167,13 +179,8 @@
     font-weight: 700;
   }
 
-  .krs-print-summary > span,
-  .krs-print-footnote {
+  .krs-print-summary > span {
     color: #475569 !important;
     font-size: 11px;
-  }
-
-  .krs-print-footnote {
-    margin-top: 16px;
   }
 }
